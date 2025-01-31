@@ -79,6 +79,76 @@ Clarinet.test({
 });
 
 Clarinet.test({
+  name: "Test auction system",
+  async fn(chain: Chain, accounts: Map<string, Account>) {
+    const wallet1 = accounts.get('wallet_1')!;
+    const wallet2 = accounts.get('wallet_2')!;
+    const wallet3 = accounts.get('wallet_3')!;
+    
+    // Register brand
+    let block = chain.mineBlock([
+      Tx.contractCall('trend-vault', 'register-brand', [
+        types.ascii("Test Brand")
+      ], wallet1.address)
+    ]);
+    
+    // Create auction
+    block = chain.mineBlock([
+      Tx.contractCall('trend-vault', 'create-auction', [
+        types.ascii("Auction Item"),
+        types.ascii("Special auction item"),
+        types.uint(1000000), // min price
+        types.uint(10) // duration
+      ], wallet1.address)
+    ]);
+    
+    block.receipts[0].result.expectOk();
+    
+    // Place bids
+    block = chain.mineBlock([
+      Tx.contractCall('trend-vault', 'place-bid', [
+        types.uint(1),
+        types.uint(1100000)
+      ], wallet2.address)
+    ]);
+    
+    block.receipts[0].result.expectOk();
+    
+    block = chain.mineBlock([
+      Tx.contractCall('trend-vault', 'place-bid', [
+        types.uint(1),
+        types.uint(1200000)
+      ], wallet3.address)
+    ]);
+    
+    block.receipts[0].result.expectOk();
+    
+    // Advance blockchain
+    chain.mineEmptyBlockUntil(20);
+    
+    // End auction
+    block = chain.mineBlock([
+      Tx.contractCall('trend-vault', 'end-auction', [
+        types.uint(1)
+      ], wallet1.address)
+    ]);
+    
+    block.receipts[0].result.expectOk();
+    
+    // Verify auction ended
+    let auctionBlock = chain.mineBlock([
+      Tx.contractCall('trend-vault', 'get-auction', [
+        types.uint(1)
+      ], wallet1.address)
+    ]);
+    
+    const auctionData = auctionBlock.receipts[0].result.expectOk().expectSome();
+    assertEquals(auctionData.is_active, types.bool(false));
+    assertEquals(auctionData.highest_bid, types.uint(1200000));
+  },
+});
+
+Clarinet.test({
   name: "Test review system",
   async fn(chain: Chain, accounts: Map<string, Account>) {
     const wallet1 = accounts.get('wallet_1')!;
