@@ -18,22 +18,28 @@ A decentralized marketplace for unique and emerging brands built on the Stacks b
 - Register brands
 - Manage listings
 - Handle royalties
-- Leave reviews
+- Leave reviews (1-5 star rating)
 
 ### Auction System
-- Create timed auctions for products
+- Create timed auctions for products (minimum 10 block duration)
 - Place bids on auction items
 - Automatic bid refunds for outbid participants
 - Secure auction completion and settlement
 - View auction status and history
 
-## Auction System Details
+## Recent Enhancements
 
-The new auction system allows brands to create timed auctions for their products with the following features:
+### Auction System Validation
+- Added minimum auction duration of 10 blocks to prevent short-lived auctions
+- Improved error handling for invalid auction parameters
+- Enhanced documentation for auction duration requirements
 
-- Set minimum price and auction duration
-- Accept increasing bids from potential buyers
-- Automatic refund of previous bids when outbid
-- Secure transfer of funds and ownership at auction end
-- Platform fee handling for auction sales
-- View active auctions and bid history
+### Review System Validation  
+- Implemented maximum 5-star rating limit
+- Added input validation for review ratings
+- Improved error reporting for invalid ratings
+
+### Error Handling
+- New error constants for invalid duration and ratings
+- More descriptive error messages
+- Better validation checks
