@@ -10,6 +10,8 @@
 (define-constant err-auction-ended (err u105))
 (define-constant err-bid-too-low (err u106))
 (define-constant err-no-active-auction (err u107))
+(define-constant err-invalid-duration (err u108))
+(define-constant err-invalid-rating (err u109))
 
 ;; Data Variables
 (define-data-var platform-fee uint u25) ;; 2.5% fee
@@ -109,27 +111,27 @@
      (product-id (+ (var-get product-counter) u1))
      (end-block (+ block-height duration)))
     
-    (if (> min-price u0)
-      (begin
-        (var-set product-counter product-id)
-        (try! (map-set Products product-id {
-          brand: tx-sender,
-          name: name,
-          description: description,
-          price: min-price,
-          available: true,
-          created-at: block-height,
-          is-auction: true
-        }))
-        (ok (map-set Auctions product-id {
-          end-block: end-block,
-          min-price: min-price,
-          highest-bid: u0,
-          highest-bidder: none,
-          is-active: true
-        })))
-      (err err-invalid-price)
-    )
+    (asserts! (>= duration u10) (err err-invalid-duration))
+    (asserts! (> min-price u0) (err err-invalid-price))
+
+    (begin
+      (var-set product-counter product-id)
+      (try! (map-set Products product-id {
+        brand: tx-sender,
+        name: name,
+        description: description,
+        price: min-price,
+        available: true,
+        created-at: block-height,
+        is-auction: true
+      }))
+      (ok (map-set Auctions product-id {
+        end-block: end-block,
+        min-price: min-price,
+        highest-bid: u0,
+        highest-bidder: none,
+        is-active: true
+      })))
   )
 )
 
@@ -218,6 +220,7 @@
   (let
     ((product (unwrap! (map-get? Products product-id) 
               (err err-listing-not-found))))
+    (asserts! (<= rating u5) (err err-invalid-rating))
     (ok (map-set Reviews 
       {product-id: product-id, reviewer: tx-sender}
       {
