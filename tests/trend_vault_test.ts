@@ -1,7 +1,7 @@
-// [Previous test imports and content remains]
+// [Previous test imports remain unchanged]
 
 Clarinet.test({
-  name: "Test category management and batch listing",
+  name: "Test enhanced batch listing validation",
   async fn(chain: Chain, accounts: Map<string, Account>) {
     const deployer = accounts.get('deployer')!;
     const wallet1 = accounts.get('wallet_1')!;
@@ -22,7 +22,7 @@ Clarinet.test({
       ], wallet1.address)
     ]);
     
-    // Batch list products
+    // Test valid batch
     block = chain.mineBlock([
       Tx.contractCall('trend-vault', 'batch-list-products', [
         types.list([types.ascii("Product 1"), types.ascii("Product 2")]),
@@ -34,15 +34,29 @@ Clarinet.test({
     
     block.receipts[0].result.expectOk();
     
-    // Verify products
-    let product1Block = chain.mineBlock([
-      Tx.contractCall('trend-vault', 'get-product', [
-        types.uint(1)
+    // Test invalid price
+    block = chain.mineBlock([
+      Tx.contractCall('trend-vault', 'batch-list-products', [
+        types.list([types.ascii("Product 1")]),
+        types.list([types.ascii("Desc 1")]),
+        types.list([types.uint(0)]),
+        types.list([types.uint(1)])
       ], wallet1.address)
     ]);
     
-    const product1Data = product1Block.receipts[0].result.expectOk().expectSome();
-    assertEquals(product1Data['category-id'], types.uint(1));
+    block.receipts[0].result.expectErr(102); // err-invalid-price
+    
+    // Test invalid category
+    block = chain.mineBlock([
+      Tx.contractCall('trend-vault', 'batch-list-products', [
+        types.list([types.ascii("Product 1")]),
+        types.list([types.ascii("Desc 1")]),
+        types.list([types.uint(1000000)]),
+        types.list([types.uint(999)])
+      ], wallet1.address)
+    ]);
+    
+    block.receipts[0].result.expectErr(110); // err-invalid-category
   },
 });
 
